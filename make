@@ -19,6 +19,7 @@
 # Update 31/05/2014:
 #
 # - Added command line parameter 'install' to upload the firmware.
+# - Added download of 'lsusb' utility for MacOS environment.
 #
 # 3D-ES
 #----------------------------------------------------------------------------
@@ -56,6 +57,12 @@ BOSSAC_OPTIONS=(
     ${RELEASE}/${FIRMWARE}.bin
 )
 
+# Which lsusb?
+if [ ! -f lsusb ]
+    then LSUSB=lsusb
+    else LSUSB=./lsusb
+fi
+
 # Check if there are script parameters:
 #
 # - Supports 'clean' to remove the build output.
@@ -89,7 +96,7 @@ then
         fi
     
         # Search for the Arduino device.
-        lsusb -d 2341:003e &> /dev/null
+        ${LSUSB} -d 2341:003e &> /dev/null
         
         # Arduino found?
         if [ $? != 1 ]
@@ -100,7 +107,7 @@ then
             echo
         else
             # Arduino not found! And Atmel?
-            lsusb -d 03eb:6124 &> /dev/null
+            ${LSUSB} -d 03eb:6124 &> /dev/null
             
             # Also missing?
             if [ $? == 1 ]
@@ -116,7 +123,7 @@ then
         while true
         do
             # Search for the Atmel device.
-            lsusb -d 03eb:6124 &> /dev/null
+            ${LSUSB} -d 03eb:6124 &> /dev/null
         
             # Found it?
             if [ $? != 1 ]
@@ -176,42 +183,51 @@ if [ ! -d ${FIRMWARE} ]; then
     git clone -b duet ${FW_REPO} ${FIRMWARE}
 fi
 
-# Check if the Arduino folder is available:
-#
-# - Detect if the hardware is 32 or 64 bits.
-# - Detect if the system runs Linux or MacOS.
-# - Download the archive if no cache found.
-# - Extract the archive to this folder.
-# - Make MacOS Arduino look like Linux Arduino.
+# Check if the Arduino folder is available.
 #
 if [ ! -d ${ARDUINO} ]
 then
+    # Test if we run on linux.
     if [[ $OSTYPE == linux-gnu ]]
     then
+        # Is this PC 32 or 64 bits?
         if [ $(uname -m) == x86_64 ]
             then ARCHIVE=${ARDUINO}-linux64.tgz
             else ARCHIVE=${ARDUINO}-linux32.tgz
         fi
 
+        # Download the archive if no cache found.
         if [ ! -f ${ARCHIVE} ]
             then wget http://downloads.arduino.cc/${ARCHIVE}
         fi
 
+        # Extract here.
         tar -xvzf ${ARCHIVE}
     fi
 
+    # Test if we run on MacOS.
     if [[ $OSTYPE == darwin* ]]
     then
+        # Only one version available.
         ARCHIVE=${ARDUINO}-macosx.zip
 
+        # Download the archive if no cache found.
         if [ ! -f ${ARCHIVE} ]
             then wget http://downloads.arduino.cc/${ARCHIVE}
         fi
 
+        # Extract here.
         unzip ${ARCHIVE}
 
+        # Make the MacOS Arduino look like a Linux Arduino.
 	mv Arduino.app/Contents/Resources/Java/* Arduino.app
 	mv Arduino.app ${ARDUINO}
+	
+        # Download MacOS 'lsusb' utility script from the repository.
+	wget https://raw.githubusercontent.com/jlhonora/lsusb/master/lsusb
+	
+	# Energize!
+	chmod +x lsusb
     fi
 fi
 
