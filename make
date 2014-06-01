@@ -21,6 +21,12 @@
 # - Added command line parameter 'install' to upload the firmware.
 # - Added download of 'lsusb' utility for MacOS environment.
 #
+# Update 01/06/2014:
+#
+# - Added a check to skip the ArduinoCorePatches folder during compilation,
+#   these files are only for installing, compiling them twice gives errors
+#   with RepRapFirmware-059e-dc42: "multiple definition of `emac_phy_read"
+#
 # 3D-ES
 #----------------------------------------------------------------------------
 
@@ -174,13 +180,13 @@ if [ ! -d ${FIRMWARE} ]; then
         echo ""
         read -p "Please answer R or D: " input
         case $input in
-            [Rr]* ) FW_REPO=git://github.com/RepRapPro/${FIRMWARE}; break;;
-            [Dd]* ) FW_REPO=git://github.com/dc42/${FIRMWARE}; break;;
+            [Rr]* ) FW_REPO=git://github.com/RepRapPro; break;;
+            [Dd]* ) FW_REPO=git://github.com/dc42; break;;
             * ) echo "Please answer R or D.";;
         esac
     done
 
-    git clone -b duet ${FW_REPO} ${FIRMWARE}
+    git clone -b duet ${FW_REPO}/${FIRMWARE} ${FIRMWARE}
 fi
 
 # Check if the Arduino folder is available.
@@ -234,7 +240,7 @@ fi
 # Check if there are ArduinoCorePatches available:
 #
 # - These patches are used by dc42 to fix Arduino code.
-# - Always overwrites files because of git pull updates.
+# - Always overwrite files because of git pull updates.
 # - Preserves the timestamps to prevent recompilation.
 #
 if [ -d ${FIRMWARE}/ArduinoCorePatches ]
@@ -345,6 +351,9 @@ mkdir -p ${BUILD} ${RELEASE}
 # Locate and compile all the .c files that need to be compiled.
 for file in $(find ${FIRMWARE} ${ARDUINO}/hardware/arduino/sam/cores -type f -name "*.c")
 do
+    # Only compile the patch files that have been installed.
+    if [ $file == *ArduinoCorePatches* ]; then continue; fi
+
     # Intermediate build output.
     D=${BUILD}/$(basename $file).d
     O=${BUILD}/$(basename $file).o
@@ -362,6 +371,9 @@ done
 # Locate and compile all the .cpp files that need to be compiled.
 for file in $(find ${FIRMWARE} ${ARDUINO}/hardware/arduino/sam -type f -name "*.cpp")
 do
+    # Only compile the patch files that have been installed.
+    if [ $file == *ArduinoCorePatches* ]; then continue; fi
+
     # Intermediate build output.
     D=${BUILD}/$(basename $file).d
     O=${BUILD}/$(basename $file).o
