@@ -352,7 +352,7 @@ mkdir -p ${BUILD} ${RELEASE}
 for file in $(find ${FIRMWARE} ${ARDUINO}/hardware/arduino/sam/cores -type f -name "*.c")
 do
     # Only compile the patch files that have been installed.
-    if [ $file == *ArduinoCorePatches* ]; then continue; fi
+    if [[ $file == *ArduinoCorePatches* ]]; then continue; fi
 
     # Intermediate build output.
     D=${BUILD}/$(basename $file).d
@@ -372,7 +372,7 @@ done
 for file in $(find ${FIRMWARE} ${ARDUINO}/hardware/arduino/sam -type f -name "*.cpp")
 do
     # Only compile the patch files that have been installed.
-    if [ $file == *ArduinoCorePatches* ]; then continue; fi
+    if [[ $file == *ArduinoCorePatches* ]]; then continue; fi
 
     # Intermediate build output.
     D=${BUILD}/$(basename $file).d
