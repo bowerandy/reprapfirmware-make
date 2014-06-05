@@ -1,11 +1,14 @@
 #!/bin/bash
 #----------------------------------------------------------------------------
 #
-# Builds RepRapPro and DC42's Ormerod firmware from source
+# Builds Ormerod Duet firmware from source
 #
 # - Downloads Arduino environment from arduino.cc
 # - Downloads the selected firmware from github.com
 # - Compiles the RepRapFirmware source code
+# - Support for RepRapPro original firmware
+# - Support for dc42's highly advisable fork
+# - Support for zombiepantslol FTP & telnet fork
 #
 # Update 30/05/2014:
 #
@@ -25,7 +28,12 @@
 #
 # - Added a check to skip the ArduinoCorePatches folder during compilation,
 #   these files are only for installing, compiling them twice gives errors
-#   with RepRapFirmware-059e-dc42: "multiple definition of `emac_phy_read"
+#   with RepRapFirmware-059e-dc42: "multiple definition of emac_phy_read"
+#
+# Update 05/06/2014:
+#
+# - Added zombiepantslol's firmware fork with FTP and Telnet.
+#   Announcement: http://forums.reprap.org/read.php?340,364934
 #
 # 3D-ES
 #----------------------------------------------------------------------------
@@ -100,10 +108,10 @@ then
             echo
             exit
         fi
-    
+
         # Search for the Arduino device.
         ${LSUSB} -d 2341:003e &> /dev/null
-        
+
         # Arduino found?
         if [ $? != 1 ]
         then
@@ -114,7 +122,7 @@ then
         else
             # Arduino not found! And Atmel?
             ${LSUSB} -d 03eb:6124 &> /dev/null
-            
+
             # Also missing?
             if [ $? == 1 ]
             then
@@ -124,13 +132,13 @@ then
                 echo
                 exit
             fi
-        fi        
+        fi
 
         while true
         do
             # Search for the Atmel device.
             ${LSUSB} -d 03eb:6124 &> /dev/null
-        
+
             # Found it?
             if [ $? != 1 ]
             then
@@ -143,7 +151,7 @@ then
                 break
             fi
         done
-        
+
         while true
         do
             # Show why we are waiting, it can take 30 seconds!
@@ -160,6 +168,11 @@ then
             exit
         done
     fi
+
+    # Don't accept unsupported options.
+    echo "$0: unsupported option: $1";
+    echo
+    exit
 fi
 
 # Exit immediately if a command exits with a non-zero status.
@@ -177,12 +190,13 @@ if [ ! -d ${FIRMWARE} ]; then
         echo ""
         echo "[R] = RepRapPro original"
         echo "[D] = dc42's excellent fork"
+        echo "[Z] = zombiepantslol's FTP and telnet fork"
         echo ""
-        read -p "Please answer R or D: " input
+        read -p "Please answer R, D or Z: " input
         case $input in
             [Rr]* ) FW_REPO=git://github.com/RepRapPro; break;;
             [Dd]* ) FW_REPO=git://github.com/dc42; break;;
-            * ) echo "Please answer R or D.";;
+            [Zz]* ) FW_REPO=git://github.com/zombiepantslol; break;;
         esac
     done
 
@@ -228,10 +242,10 @@ then
         # Make the MacOS Arduino look like a Linux Arduino.
 	mv Arduino.app/Contents/Resources/Java/* Arduino.app
 	mv Arduino.app ${ARDUINO}
-	
+
         # Download MacOS 'lsusb' utility script from the repository.
 	wget https://raw.githubusercontent.com/jlhonora/lsusb/master/lsusb
-	
+
 	# Energize!
 	chmod +x lsusb
     fi
